@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='unhas.ico') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+</head>
+<body>
+
+    <main>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Analisis Sentimen</a></li>
+            <li><a href="/scrape">Scraping Data</a></li>
+        </ul>
+    </nav>    
+
+    <div class="container">
+        <h1>Analisis Sentimen</h1>
+
+        <!-- Form Title -->
+        <div class="box">
+            <form id="title-form">
+                <label for="title-input">Judul Analisis:</label>
+                <input type="text" id="title-input" placeholder="Masukkan Judul...">
+            </form>
+        </div>
+
+        <!-- Form Upload -->
+        <div class="box">
+            <form id="upload-form">
+                <label for="file-input" class="custom-file-upload">
+                    Pilih File CSV
+                </label>
+                <input type="file" id="file-input" accept=".csv">
+                <span id="file-name">Tidak ada file dipilih</span>
+                <button type="submit">Upload dan Prediksi</button>
+            </form>
+        </div>
+
+        <!-- Preloader -->
+        <div id="loading" style="display: none;">Memproses data...</div>
+
+        <!-- Error Message -->
+        <div id="error-message" style="color: red; display: none;"></div>
+
+        <!-- Hasil Prediksi -->
+        <div class="box" id="result-section" style="display: none;">
+            <h2>Hasil Prediksi</h2>
+        
+            <!-- Filter Sentimen -->
+            <div class="sentiment-filter">
+                <label for="filter-sentiment">Filter Sentimen:</label>
+                <select id="filter-sentiment">
+                    <option value="all">Semua</option>
+                    <option value="positif">Positif</option>
+                    <option value="netral">Netral</option>
+                    <option value="negatif">Negatif</option>
+                </select>
+            </div>
+        
+            <div class="table-container">
+                <table id="result-table">
+                    <thead>
+                        <tr>
+                            <th>Ulasan</th>
+                            <th class="rating">Rating</th>
+                            <th>Tanggal</th>
+                            <th>Sentimen</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Visualisasi Sentimen -->
+        <div class="box" id="chart-section" style="display: none;">
+            <h2>Visualisasi Sentimen</h2>
+            <h3 id="analysis-title" style="text-align: center; display: none;"></h3> <!-- 🔥 Judul akan muncul di sini -->
+            <div class="chart-container">
+                <canvas id="sentiment-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

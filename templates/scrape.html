@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scraping Data</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='unhas.ico') }}" type="image/x-icon">
+</head>
+<body>
+<main>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Analisis Sentimen</a></li>
+            <li><a href="/scrape">Scraping Data</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Scraping Data</h1>
+
+        <!-- Form Scraping -->
+        <div class="box">
+            <form id="scrape-form">
+                <label for="platform">Pilih Platform:</label>
+                <select id="platform">
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="glints">Glints</option>
+                    <option value="indeed">Indeed</option>
+                </select>
+
+                <!-- ❌ Hapus Input Jumlah Data -->
+                
+                <label for="start_date">Tanggal Mulai:</label>
+                <input type="date" id="start_date" />
+
+                <label for="end_date">Tanggal Akhir:</label>
+                <input type="date" id="end_date" />
+
+                <button type="button" id="scrape-btn">Mulai Scraping</button>
+            </form>
+        </div>
+
+        <!-- Preloader -->
+        <div id="loading" style="display: none;">Sedang mengambil data...</div>
+
+        <!-- Error Message -->
+        <div id="error-message" style="color: red; display: none;"></div>
+
+        <!-- Hasil Scraping -->
+        <div class="box" id="result-section" style="display: none;">
+            <h2>Hasil Scraping</h2>
+
+            <div class="table-container">
+                <table id="result-table">
+                    <thead>
+                        <tr>
+                            <th>Ulasan</th>
+                            <th>Rating</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button id="download-btn" style="display: none;">Download CSV</button>
+        </div>
+    </div>
+</main>
+
+    <script src="{{ url_for('static', filename='scrape.js') }}"></script>
+</body>
+</html>

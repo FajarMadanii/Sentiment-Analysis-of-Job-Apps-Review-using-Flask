@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
         errorMessage.style.display = "none";
         loading.style.display = "block";
 
-        // Sembunyikan hasil prediksi & chart sebelum prediksi baru dilakukan
         resultSection.style.display = "none";
         chartSection.style.display = "none";
 
@@ -50,9 +49,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Tampilkan hasil prediksi & chart setelah data tersedia
             displayResults(data.predictions);
             updateChart(data.sentiment_counts);
+            updateTrendChart(data.predictions);
+
+            const keywords = extractKeywordsBySentimentAndMonth(data.predictions);
+            renderKeywordTable(keywords);
+            document.getElementById("keyword-table-section").style.display = "block";
+
             resultSection.style.display = "block";
             chartSection.style.display = "block";
 
@@ -74,16 +78,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Ambil input title dan tampilkan setelah user mengetik
     document.getElementById("title-input").addEventListener("input", function () {
         let titleText = this.value.trim();
         let titleDisplay = document.getElementById("analysis-title");
 
         if (titleText) {
             titleDisplay.textContent = titleText;
-            titleDisplay.style.display = "block"; // Tampilkan jika ada isi
+            titleDisplay.style.display = "block";
         } else {
-            titleDisplay.style.display = "none"; // Sembunyikan jika kosong
+            titleDisplay.style.display = "none";
         }
     });
 
@@ -106,13 +109,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateChart(sentimentCounts) {
         let ctx = document.getElementById("sentiment-chart").getContext("2d");
-    
-        // Hancurkan chart lama jika sudah ada
+
         if (window.sentimentChart) {
             window.sentimentChart.destroy();
         }
-    
-        // Buat chart baru dengan data terbaru
+
         window.sentimentChart = new Chart(ctx, {
             type: "bar",
             data: {
@@ -126,4 +127,173 @@ document.addEventListener("DOMContentLoaded", function () {
             options: { responsive: true, plugins: { legend: { display: false } } }
         });
     }
+
+    function processMonthlyTrend(predictions) {
+        const trendData = {};
+
+        predictions.forEach(item => {
+            let dateParts = item.date.split("-");
+            if (dateParts.length !== 3) return;
+
+            let yearMonth = `${dateParts[2]}-${dateParts[1]}`;
+
+            if (!trendData[yearMonth]) {
+                trendData[yearMonth] = { positif: 0, netral: 0, negatif: 0 };
+            }
+
+            let sentiment = item.sentiment.toLowerCase();
+            if (["positif", "netral", "negatif"].includes(sentiment)) {
+                trendData[yearMonth][sentiment]++;
+            }
+        });
+
+        let sortedMonths = Object.keys(trendData).sort();
+        let labels = sortedMonths;
+        let positifData = [], netralData = [], negatifData = [];
+
+        sortedMonths.forEach(m => {
+            positifData.push(trendData[m].positif);
+            netralData.push(trendData[m].netral);
+            negatifData.push(trendData[m].negatif);
+        });
+
+        return { labels, positifData, netralData, negatifData };
+    }
+
+    function updateTrendChart(predictions) {
+        const canvas = document.getElementById("trend-chart");
+        if (!canvas) {
+            console.warn("Canvas trend-chart tidak ditemukan.");
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
+
+        if (window.trendChart) {
+            window.trendChart.destroy();
+        }
+
+        const { labels, positifData, netralData, negatifData } = processMonthlyTrend(predictions);
+
+        window.trendChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Positif",
+                        data: positifData,
+                        borderColor: "green",
+                        backgroundColor: "rgba(0,128,0,0.1)",
+                        fill: true,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Netral",
+                        data: netralData,
+                        borderColor: "orange",
+                        backgroundColor: "rgba(255,165,0,0.1)",
+                        fill: true,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Negatif",
+                        data: negatifData,
+                        borderColor: "red",
+                        backgroundColor: "rgba(255,0,0,0.1)",
+                        fill: true,
+                        tension: 0.3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: "Jumlah Ulasan" } },
+                    x: { title: { display: true, text: "Bulan (YYYY-MM)" } }
+                }
+            }
+        });
+    }
 });
+
+function extractKeywordsBySentimentAndMonth(predictions, topN = 20) {
+    // Struktur data: { "YYYY-MM": { positif: {word: count}, netral: {}, negatif: {} } }
+    const keywordData = {};
+
+    predictions.forEach(item => {
+        // Ubah tanggal menjadi format YYYY-MM
+        let dateParts = item.date.split("-");
+        if (dateParts.length !== 3) return;
+        const yearMonth = `${dateParts[2]}-${dateParts[1]}`;
+
+        if (!keywordData[yearMonth]) {
+            keywordData[yearMonth] = {
+                positif: {},
+                netral: {},
+                negatif: {}
+            };
+        }
+
+        const sentiment = item.sentiment.toLowerCase();
+        if (!["positif", "netral", "negatif"].includes(sentiment)) return;
+
+        // Tokenisasi sederhana, bisa disesuaikan dengan preprocessing-mu
+        let words = item.content.toLowerCase().match(/\b\w+\b/g);
+        if (!words) return;
+
+        words.forEach(word => {
+            if (word.length <= 2) return; // abaikan kata sangat pendek
+
+            if (!keywordData[yearMonth][sentiment][word]) {
+                keywordData[yearMonth][sentiment][word] = 0;
+            }
+            keywordData[yearMonth][sentiment][word]++;
+        });
+    });
+
+    // Ambil top N kata kunci per sentimen tiap bulan
+    const results = [];
+    Object.keys(keywordData).sort().forEach(month => {
+        const monthData = keywordData[month];
+        const row = { month: month };
+
+        ["positif", "netral", "negatif"].forEach(sent => {
+            const wordsCount = monthData[sent];
+            // Sort words by frequency desc, ambil topN
+            const topWords = Object.entries(wordsCount)
+                .sort((a,b) => b[1] - a[1])
+                .slice(0, topN)
+                .map(wc => wc[0])
+                .join(", ");
+            row[sent] = topWords || "-";
+        });
+
+        results.push(row);
+    });
+
+    return results;
+}
+
+function renderKeywordTable(keywords) {
+    const tbody = document.querySelector("#keyword-table tbody");
+    tbody.innerHTML = "";
+
+    if (!keywords.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Tidak ada data kata kunci</td></tr>`;
+        return;
+    }
+
+    keywords.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${row.month}</td>
+            <td>${row.positif}</td>
+            <td>${row.netral}</td>
+            <td>${row.negatif}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+

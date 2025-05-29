@@ -6,18 +6,18 @@
     <title>Sentiment Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='unhas.ico') }}" type="image/x-icon">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <main>
+<main>
     <!-- Navbar -->
     <nav class="navbar">
         <ul>
             <li><a href="/">Analisis Sentimen</a></li>
             <li><a href="/scrape">Scraping Data</a></li>
         </ul>
-    </nav>    
+    </nav>
 
     <div class="container">
         <h1>Analisis Sentimen</h1>
@@ -33,25 +33,23 @@
         <!-- Form Upload -->
         <div class="box">
             <form id="upload-form">
-                <label for="file-input" class="custom-file-upload">
-                    Pilih File CSV
-                </label>
+                <label for="file-input" class="custom-file-upload">Pilih File CSV</label>
                 <input type="file" id="file-input" accept=".csv">
                 <span id="file-name">Tidak ada file dipilih</span>
                 <button type="submit">Upload dan Prediksi</button>
             </form>
         </div>
 
-        <!-- Preloader -->
-        <div id="loading" style="display: none;">Memproses data...</div>
+        <!-- Loading -->
+        <div id="loading" class="loading" style="display: none;">Memproses data...</div>
 
         <!-- Error Message -->
-        <div id="error-message" style="color: red; display: none;"></div>
+        <div id="error-message" class="error-message" style="display: none;"></div>
 
         <!-- Hasil Prediksi -->
         <div class="box" id="result-section" style="display: none;">
             <h2>Hasil Prediksi</h2>
-        
+
             <!-- Filter Sentimen -->
             <div class="sentiment-filter">
                 <label for="filter-sentiment">Filter Sentimen:</label>
@@ -62,7 +60,7 @@
                     <option value="negatif">Negatif</option>
                 </select>
             </div>
-        
+
             <div class="table-container">
                 <table id="result-table">
                     <thead>
@@ -81,14 +79,33 @@
         <!-- Visualisasi Sentimen -->
         <div class="box" id="chart-section" style="display: none;">
             <h2>Visualisasi Sentimen</h2>
-            <h3 id="analysis-title" style="text-align: center; display: none;"></h3> <!-- 🔥 Judul akan muncul di sini -->
+            <h3 id="analysis-title" style="text-align: center; display: none;"></h3>
             <div class="chart-container">
                 <canvas id="sentiment-chart"></canvas>
             </div>
+            <div class="chart-container" style="margin-top: 40px;">
+                <canvas id="trend-chart"></canvas>
+            </div>
         </div>
-    </div>
+
+        <!-- Tabel Kata Kunci per Bulan dan Sentimen -->
+        <div class="box" id="keyword-table-section" style="display: none; margin-top: 40px;">
+            <h2>Kata Kunci Per Bulan</h2>
+            <table id="keyword-table" border="0" cellpadding="5" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Bulan</th>
+                        <th>Positif</th>
+                        <th>Netral</th>
+                        <th>Negatif</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
 </main>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

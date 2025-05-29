@@ -1,16 +1,19 @@
-import re
-import json
-from nltk.tokenize import word_tokenize
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
+from nltk.tokenize import word_tokenize
+import re
 from sklearn.base import BaseEstimator, TransformerMixin
+import json
 
-# Inisialisasi stemmer dan stopwords
-factory = StemmerFactory()
-stemmer = factory.create_stemmer()
+# Inisialisasi stemmer
+factory_stemmer = StemmerFactory()
+stemmer = factory_stemmer.create_stemmer()
 
-with open('preprocessing/stopwords.txt', 'r', encoding='utf-8') as file:
-    stopwords_id = set(file.read().splitlines())
+# Inisialisasi stopword remover dan ambil list stopwords-nya
+factory_stopwords = StopWordRemoverFactory()
+stopwords_id = set(factory_stopwords.get_stop_words())
 
+# Load slang dictionary (sama seperti sebelumnya)
 with open('preprocessing/slang_words.txt', 'r', encoding='utf-8') as file:
     slang_dict = json.load(file)
 
@@ -43,11 +46,13 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        # Menggunakan list comprehension untuk iterasi dan transformasi
         X_cleaned = [self.clean_text(text) for text in X]
         X_normalized = [self.normalize_slang(text) for text in X_cleaned]
         X_tokens = [self.tokenize_text(text) for text in X_normalized]
         X_no_stopwords = [self.remove_stopwords(tokens) for tokens in X_tokens]
         X_stemmed = [self.stemming_tokens(tokens) for tokens in X_no_stopwords]
-        return [' '.join(tokens) for tokens in X_stemmed]
 
+        # Hapus stopwords lagi setelah stemming
+        X_final = [self.remove_stopwords(tokens) for tokens in X_stemmed]
+
+        return [' '.join(tokens) for tokens in X_final]

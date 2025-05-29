@@ -16,7 +16,7 @@ CORS(app)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Mapping aplikasi dengan ID Google Play Store
+# ID aplikasi dari Play Store
 APP_IDS = {
     "linkedin": "com.linkedin.android",
     "glints": "com.glints.candidate",
@@ -28,8 +28,9 @@ try:
     model = joblib.load("model/extra_trees_model.joblib")
     tfidf = joblib.load("model/tfidf_vectorizer.joblib")
     text_preprocessor = TextPreprocessor()
+    logger.info("Model dan vectorizer berhasil dimuat.")
 except Exception as e:
-    logger.error(f"Error loading model: {e}")
+    logger.error(f"Error loading model/vectorizer: {e}")
     model, tfidf, text_preprocessor = None, None, None
 
 @app.route("/")
@@ -49,37 +50,43 @@ def upload_file():
         df = pd.read_csv(file, sep=",", quoting=csv.QUOTE_MINIMAL, on_bad_lines="skip", encoding="utf-8", engine="python")
         if df.empty:
             return jsonify({"error": "File CSV kosong atau tidak memiliki data"}), 400
-        
+
+        # Validasi kolom wajib
         required_columns = {"content", "date", "score"}
         missing_columns = required_columns - set(df.columns)
         if missing_columns:
             return jsonify({"error": f"Kolom {', '.join(missing_columns)} tidak ditemukan"}), 400
-        
-        # Lakukan preprocessing
-        df["clean_text"] = text_preprocessor.transform(df["content"].astype(str))
 
-        # 🔥 Hapus data kosong setelah preprocessing
+        # Preprocessing teks
+        df["clean_text"] = text_preprocessor.transform(df["content"].astype(str))
         df = df[df["clean_text"].str.strip() != ""]
+
         if df.empty:
             return jsonify({"error": "Semua data kosong setelah preprocessing!"}), 400
 
-        # Lakukan prediksi hanya pada data yang tersisa
+        # Prediksi sentimen
         X_tfidf = tfidf.transform(df["clean_text"])
-        predictions = model.predict(X_tfidf)
+        predictions_raw = model.predict(X_tfidf)
+
+        # Pastikan label sentimen lowercase supaya seragam
+        predictions = [p.lower() for p in predictions_raw]
         df["sentiment"] = predictions
 
-        # Hitung jumlah sentimen
-        sentiment_counts = {"positif": 0, "netral": 0, "negatif": 0}
-        sentiment_counts.update(df["sentiment"].value_counts().to_dict())
+        # Hitung jumlah tiap sentimen
+        sentiment_counts = {
+            "positif": int((df["sentiment"] == "positif").sum()),
+            "netral": int((df["sentiment"] == "netral").sum()),
+            "negatif": int((df["sentiment"] == "negatif").sum())
+        }
 
-        # Buat hasil JSON tanpa data kosong
+        # Ambil kolom yang diperlukan untuk frontend
         result = df[["content", "date", "score", "sentiment"]].to_dict(orient="records")
+
         return jsonify({"predictions": result, "sentiment_counts": sentiment_counts})
 
     except Exception as e:
         logger.error(f"Error processing file: {e}")
         return jsonify({"error": "Terjadi kesalahan saat memproses file"}), 500
-
 
 @app.route("/scrape", methods=["GET", "POST"])
 def scrape_data():

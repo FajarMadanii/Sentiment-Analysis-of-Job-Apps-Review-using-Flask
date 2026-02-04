@@ -1,19 +1,22 @@
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 import re
 from sklearn.base import BaseEstimator, TransformerMixin
 import json
+import nltk
+
+nltk.download('stopwords')
+nltk.download('punkt')
 
 # Inisialisasi stemmer
 factory_stemmer = StemmerFactory()
 stemmer = factory_stemmer.create_stemmer()
 
-# Inisialisasi stopword remover dan ambil list stopwords-nya
-factory_stopwords = StopWordRemoverFactory()
-stopwords_id = set(factory_stopwords.get_stop_words())
+# Gunakan stopwords dari NLTK
+stopwords_id = set(stopwords.words('indonesian'))
 
-# Load slang dictionary (sama seperti sebelumnya)
+# Load slang dictionary
 with open('preprocessing/slang_words.txt', 'r', encoding='utf-8') as file:
     slang_dict = json.load(file)
 
@@ -51,8 +54,5 @@ class TextPreprocessor(BaseEstimator, TransformerMixin):
         X_tokens = [self.tokenize_text(text) for text in X_normalized]
         X_no_stopwords = [self.remove_stopwords(tokens) for tokens in X_tokens]
         X_stemmed = [self.stemming_tokens(tokens) for tokens in X_no_stopwords]
-
-        # Hapus stopwords lagi setelah stemming
         X_final = [self.remove_stopwords(tokens) for tokens in X_stemmed]
-
         return [' '.join(tokens) for tokens in X_final]

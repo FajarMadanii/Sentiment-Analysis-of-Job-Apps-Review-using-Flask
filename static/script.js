@@ -240,7 +240,7 @@ function extractKeywordsBySentimentAndMonth(predictions, topN = 20) {
         if (!["positif", "netral", "negatif"].includes(sentiment)) return;
 
         // Tokenisasi sederhana, bisa disesuaikan dengan preprocessing-mu
-        let words = item.content.toLowerCase().match(/\b\w+\b/g);
+        let words = item.clean_text ? item.clean_text.toLowerCase().match(/\b\w+\b/g) : [];
         if (!words) return;
 
         words.forEach(word => {
